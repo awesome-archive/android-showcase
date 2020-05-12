@@ -1,7 +1,10 @@
 // Versions consts that are used across libraries and Gradle plugins
 object CoreVersion {
-    const val KOTLIN = "1.3.41"
-    const val COROUTINES_ANDROID = "1.3.0-RC2"
-    const val KTLINT = "0.34.2"
-    const val NAVIGATION = "2.1.0-rc01"
+    const val KOTLIN = "1.3.72"
+    const val COROUTINES_ANDROID = "1.3.3"
+    const val KTLINT = "0.36.0"
+
+    // 2.3.x required for androidx.navigation:navigation-dynamic-features-fragment dependency
+    // DynamicNavHostFragmentDynamicNavHostFragment
+    const val NAVIGATION = "2.3.0-alpha06"
 }

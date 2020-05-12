@@ -2,30 +2,17 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
-buildscript {
-    repositories {
-        // Android plugin & support libraries
-        google()
-
-        // Main open-source repository
-        jcenter()
-
-        // Ktlint Gradle
-        maven("https://plugins.gradle.org/m2/")
-    }
-
-    dependencies {
-        classpath(GradleDependency.ANDROID_GRADLE)
-        classpath(GradleDependency.KOTLIN)
-        classpath(GradleDependency.SAFE_ARGS)
-        classpath(GradleDependency.KTLINT_GRADLE)
-    }
-}
-
 plugins {
-    id(GradlePluginId.DETEKT) version GradlePluginVersion.DETEKT
-    id(GradlePluginId.KTLINT_GRADLE) version GradlePluginVersion.KTLINT_GRADLE
-    id(GradlePluginId.GRADLE_VERSION_PLUGIN) version GradlePluginVersion.GRADLE_VERSION_PLUGIN
+    id(GradlePluginId.DETEKT)
+    id(GradlePluginId.KTLINT_GRADLE)
+    id(GradlePluginId.GRADLE_VERSION_PLUGIN)
+    id(GradlePluginId.KOTLIN_JVM) apply false
+    id(GradlePluginId.KOTLIN_ANDROID) apply false
+    id(GradlePluginId.KOTLIN_ANDROID_EXTENSIONS) apply false
+    id(GradlePluginId.ANDROID_APPLICATION) apply false
+    id(GradlePluginId.ANDROID_DYNAMIC_FEATURE) apply false
+    id(GradlePluginId.ANDROID_LIBRARY) apply false
+    id(GradlePluginId.SAFE_ARGS) apply false
 }
 
 // all projects = root project + sub projects
@@ -36,17 +23,23 @@ allprojects {
     }
 
     // We want to apply ktlint at all project level because it also checks build gradle files
-    plugins.apply(GradlePluginId.KTLINT_GRADLE)
+    apply(plugin = GradlePluginId.KTLINT_GRADLE)
 
     // Ktlint configuration for sub-projects
     ktlint {
         version.set(CoreVersion.KTLINT)
         verbose.set(true)
         android.set(true)
-        reporters.set(setOf(ReporterType.CHECKSTYLE))
+
+        // Uncomment below line and run .\gradlew ktlintCheck to see check ktlint experimental rules
+        // enableExperimentalRules.set(true)
+
+        reporters {
+            reporter(ReporterType.CHECKSTYLE)
+        }
 
         filter {
-            exclude("**/generated/**")
+            exclude { element -> element.file.path.contains("generated/") }
         }
     }
 }
@@ -56,10 +49,10 @@ subprojects {
         maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it > 0 } ?: 1
     }
 
-    plugins.apply(GradlePluginId.DETEKT)
+    apply(plugin = GradlePluginId.DETEKT)
 
     detekt {
-        config = files("${project.rootDir}/config/detekt.yml")
+        config = files("${project.rootDir}/detekt.yml")
         parallel = true
     }
 }
@@ -95,12 +88,13 @@ tasks {
 }
 
 task("staticCheck") {
-    description = """Mimics all static checks that run on CI.
+    description =
+        """Mimics all static checks that run on CI.
         Note that this task is intended to run locally (not on CI), because on CI we prefer to have parallel execution
         and separate reports for each check (multiple statuses eg. on github PR page).
-    """.trimMargin()
+        """.trimMargin()
 
-    group = "check"
+    group = "verification"
     afterEvaluate {
         // Filter modules with "lintDebug" task (non-Android modules do not have lintDebug task)
         val lintTasks = subprojects.mapNotNull { "${it.name}:lintDebug" }

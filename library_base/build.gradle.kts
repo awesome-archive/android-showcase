@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
-
 plugins {
     id(GradlePluginId.ANDROID_LIBRARY)
     id(GradlePluginId.KOTLIN_ANDROID)
@@ -16,7 +14,6 @@ android {
         versionCode = AndroidConfig.VERSION_CODE
         versionName = AndroidConfig.VERSION_NAME
         testInstrumentationRunner = AndroidConfig.TEST_INSTRUMENTATION_RUNNER
-        vectorDrawables.useSupportLibrary = AndroidConfig.SUPPORT_LIBRARY_VECTOR_DRAWABLES
     }
 
     buildTypes {
@@ -36,10 +33,7 @@ android {
     }
 
     kotlinOptions {
-        // "this" is currently lacking a proper type
-        // See: https://youtrack.jetbrains.com/issue/KT-31077
-        val options = this as? KotlinJvmOptions
-        options?.jvmTarget = JavaVersion.VERSION_1_8.toString()
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
     testOptions {
@@ -47,21 +41,22 @@ android {
     }
 }
 
-androidExtensions { isExperimental = true }
-
 dependencies {
     api(LibraryDependency.KOTLIN)
     api(LibraryDependency.KOTLIN_REFLECT)
-
     api(LibraryDependency.KODEIN)
     api(LibraryDependency.KODEIN_ANDROID_X)
-
+    api(LibraryDependency.NAVIGATION_FRAGMENT_KTX)
+    api(LibraryDependency.NAVIGATION_UI_KTX)
+    api(LibraryDependency.NAVIGATION_DYNAMIC_FEATURE_FRAGMENT_KTX)
     api(LibraryDependency.TIMBER)
-    api(LibraryDependency.APP_COMPACT)
+    api(LibraryDependency.APP_COMPAT)
     api(LibraryDependency.COROUTINES_ANDROID)
     api(LibraryDependency.CORE_KTX)
     api(LibraryDependency.FRAGMENT_KTX)
     api(LibraryDependency.LIFECYCLE_EXTENSIONS)
     api(LibraryDependency.LIFECYCLE_VIEW_MODEL_KTX)
     api(LibraryDependency.COIL)
+
+    addTestDependencies()
 }

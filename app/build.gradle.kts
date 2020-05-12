@@ -1,5 +1,5 @@
 import com.android.build.gradle.internal.dsl.BaseFlavor
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
+import com.android.build.gradle.internal.dsl.DefaultConfig
 
 plugins {
     id(GradlePluginId.ANDROID_APPLICATION)
@@ -21,10 +21,11 @@ android {
         versionCode = AndroidConfig.VERSION_CODE
         versionName = AndroidConfig.VERSION_NAME
         testInstrumentationRunner = AndroidConfig.TEST_INSTRUMENTATION_RUNNER
-        vectorDrawables.useSupportLibrary = AndroidConfig.SUPPORT_LIBRARY_VECTOR_DRAWABLES
 
-        resValueFromGradleProperty("apiBaseUrl")
-        resValueFromGradleProperty("apiToken")
+        buildConfigFieldFromGradleProperty("apiBaseUrl")
+        buildConfigFieldFromGradleProperty("apiToken")
+
+        buildConfigField("FEATURE_MODULE_NAMES", getDynamicFeatureModuleNames())
     }
 
     buildTypes {
@@ -47,14 +48,11 @@ android {
         }
     }
 
-    dynamicFeatures = mutableSetOf(
-        ModuleDependency.FEATURE_ALBUM,
-        ModuleDependency.FEATURE_FAVOURITE,
-        ModuleDependency.FEATURE_PROFILE
-    )
+    // Each feature module that is included in settings.gradle.kts is added here as dynamic feature
+    dynamicFeatures = ModuleDependency.getDynamicFeatureModules().toMutableSet()
 
     lintOptions {
-        // By default lint does not check test sources, but setting this option means that lint will nto even parse them
+        // By default lint does not check test sources, but setting this option means that lint will not even parse them
         isIgnoreTestSources = true
     }
 
@@ -64,29 +62,21 @@ android {
     }
 
     kotlinOptions {
-        // "this" is currently lacking a proper type
-        // See: https://youtrack.jetbrains.com/issue/KT-31077
-        val options = this as? KotlinJvmOptions
-        options?.jvmTarget = JavaVersion.VERSION_1_8.toString()
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 }
-
-androidExtensions { isExperimental = true }
 
 dependencies {
     api(project(ModuleDependency.LIBRARY_BASE))
 
-    api(LibraryDependency.NAVIGATION_FRAGMENT_KTX)
-    api(LibraryDependency.NAVIGATION_UI_KTX)
+    implementation(LibraryDependency.OK_HTTP)
     implementation(LibraryDependency.LOGGING_INTERCEPTOR)
     implementation(LibraryDependency.PLAY_CORE)
     implementation(LibraryDependency.STETHO)
-
     implementation(LibraryDependency.STETHO_OK_HTTP)
 
     api(LibraryDependency.RETROFIT)
     api(LibraryDependency.RETROFIT_MOSHI_CONVERTER)
-
     api(LibraryDependency.SUPPORT_CONSTRAINT_LAYOUT)
     api(LibraryDependency.COORDINATOR_LAYOUT)
     api(LibraryDependency.RECYCLER_VIEW)
@@ -94,16 +84,24 @@ dependencies {
     api(LibraryDependency.FRAGMENT_KTX)
     api(LibraryDependency.K_ANDROID)
     api(LibraryDependency.LOTTIE)
-
-    addTestDependencies()
 }
 
-fun BaseFlavor.resValueFromGradleProperty(gradlePropertyName: String) {
+fun BaseFlavor.buildConfigFieldFromGradleProperty(gradlePropertyName: String) {
     val propertyValue = project.properties[gradlePropertyName] as? String
     checkNotNull(propertyValue) { "Gradle property $gradlePropertyName is null" }
 
-    val androidResourceName = "build_param_${gradlePropertyName.toSnakeCase()}"
-    resValue("string", androidResourceName, propertyValue)
+    val androidResourceName = "GRADLE_${gradlePropertyName.toSnakeCase()}".toUpperCase()
+    buildConfigField("String", androidResourceName, propertyValue)
 }
 
+fun getDynamicFeatureModuleNames() = ModuleDependency.getDynamicFeatureModules()
+    .map { it.replace(":feature_", "") }
+    .toSet()
+
 fun String.toSnakeCase() = this.split(Regex("(?=[A-Z])")).joinToString("_") { it.toLowerCase() }
+
+fun DefaultConfig.buildConfigField(name: String, value: Set<String>) {
+    // Generates String that holds Java String Array code
+    val strValue = value.joinToString(prefix = "{", separator = ",", postfix = "}", transform = { "\"$it\"" })
+    buildConfigField("String[]", name, strValue)
+}

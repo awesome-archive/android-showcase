@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
-
 plugins {
     id(GradlePluginId.ANDROID_LIBRARY)
     id(GradlePluginId.KOTLIN_ANDROID)
@@ -16,7 +14,6 @@ android {
         versionCode = AndroidConfig.VERSION_CODE
         versionName = AndroidConfig.VERSION_NAME
         testInstrumentationRunner = AndroidConfig.TEST_INSTRUMENTATION_RUNNER
-        vectorDrawables.useSupportLibrary = AndroidConfig.SUPPORT_LIBRARY_VECTOR_DRAWABLES
     }
 
     buildTypes {
@@ -31,10 +28,7 @@ android {
     }
 
     kotlinOptions {
-        // "this" is currently lacking a proper type
-        // See: https://youtrack.jetbrains.com/issue/KT-31077
-        val options = this as? KotlinJvmOptions
-        options?.jvmTarget = JavaVersion.VERSION_1_8.toString()
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
     testOptions {
@@ -42,11 +36,10 @@ android {
     }
 }
 
-androidExtensions { isExperimental = true }
-
 dependencies {
-    // We use implementation here instead of testImplementation because we will add this library as testImplementation dependency
-    // to other modules. Using implementation allows us to write tests for test utilities.
+    // We use implementation here instead of testImplementation because we will add this library as
+    // testImplementation dependency to other modules. Using implementation allows us to write tests
+    // for test utilities.
     implementation(LibraryDependency.KOTLIN)
     implementation(TestLibraryDependency.JUNIT)
     implementation(TestLibraryDependency.COROUTINES_TEST)
